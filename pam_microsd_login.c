@@ -36,7 +36,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
       token_microsd.good = false;
     read(microsd_fd, token_microsd.header, sizeof token_microsd.header);
     if (memcmp(token_microsd.header, header_cmp, 10))
-        log_error("No.");
+        log_error("bad header");
     else
     {
         read(microsd_fd, token_microsd.data, sizeof token_microsd.data);
@@ -66,6 +66,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
                     update_token(username);
                     return PAM_SUCCESS;
                 }
+                log_error("bad token");
             }
         }
     }
