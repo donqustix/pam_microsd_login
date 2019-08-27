@@ -10,7 +10,11 @@
 #include <errno.h>
 #include <pwd.h>
 
-static const int TOKEN_SIZE = 256;
+enum {
+    HEADER_USERNAME_SIZE    =    16,
+    HEADER_CODE_SIZE        =    10,
+    TOKEN_SIZE              =   256
+};
 
 void log_error(const char* format, ...)
 {
@@ -59,7 +63,7 @@ int save_token_home(const char* user, unsigned char* token)
     return 0;
 }
 
-int save_token_microsd(unsigned char* token)
+int save_token_microsd(unsigned char* token, const char* user)
 {
     const int microsd_fd = open("/dev/mmcblk0", O_WRONLY);
     if (microsd_fd < 0)
@@ -68,12 +72,15 @@ int save_token_microsd(unsigned char* token)
         return 1;
     }
 #ifdef TOKEN_WRITE_HEADER
-    const unsigned char header[] = {
+    const unsigned char header[HEADER_CODE_SIZE] = {
         49, 138, 84, 64, 58, 19, 175, 38, 170, 252
     };
-    write(microsd_fd, header, sizeof header);
+    const size_t username_size = strlen(user) + 1;
+    write(microsd_fd, header,  HEADER_CODE_SIZE);
+    write(microsd_fd, user, username_size);
+    lseek(microsd_fd, HEADER_USERNAME_SIZE - username_size, SEEK_CUR);
 #else
-    lseek(microsd_fd, 10, SEEK_SET);
+    lseek(microsd_fd, HEADER_CODE_SIZE + HEADER_USERNAME_SIZE, SEEK_SET);
 #endif
     write(microsd_fd, token, TOKEN_SIZE);
     close(microsd_fd);
@@ -85,7 +92,7 @@ int update_token(const char* user)
     unsigned char token[TOKEN_SIZE];
     if (generate_token(token))
         return 1;
-    if (save_token_microsd(token))
+    if (save_token_microsd(token, user))
         return 1;
     if (save_token_home(user, token))
         return 1;
