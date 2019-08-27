@@ -10,6 +10,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
 {
     const char* username = NULL;
     const int pam_code = pam_get_user(pamh, &username, NULL);
+    int ret_value = PAM_AUTH_ERR;
     if (pam_code != PAM_SUCCESS) {
         log_error("pam_get_user() failed: %s", pam_strerror(pamh, pam_code));
         goto cleanup;
@@ -60,12 +61,11 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
         log_error("bad token");
         goto cleanup_token_home_fd;
     }
-    update_token(username);
-    return PAM_SUCCESS;
+    update_token(username); ret_value = PAM_SUCCESS;
 cleanup_token_home_fd: close(token_home_fd);
 cleanup_microsd_fd:    close(microsd_fd);
 cleanup:
-    return PAM_AUTH_ERR;
+    return ret_value;
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t* pamh, int flags, int argc, const char** argv)
