@@ -55,7 +55,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
             snprintf(buffer, 64, "%s/microsd_token", pwd->pw_dir);
             const int token_home_fd = open(buffer, O_RDONLY);
             if (token_home_fd < 0)
-                log_error("open() - microsd_token failed");
+                log_error("open() - microsd_token failed: %s", strerror(errno));
             else
             {
                 unsigned char token_home[TOKEN_SIZE];
