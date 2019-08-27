@@ -12,12 +12,12 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
     const int pam_code = pam_get_user(pamh, &username, NULL);
     if (pam_code != PAM_SUCCESS) {
         log_error("pam_get_user() failed: %s", pam_strerror(pamh, pam_code));
-        return PAM_AUTH_ERR;
+        goto cleanup;
     }
     const int microsd_fd = open("/dev/mmcblk0", O_RDONLY);
     if (microsd_fd < 0) {
         log_error("open() failed: %s", strerror(errno));
-        return PAM_AUTH_ERR;
+        goto cleanup;
     }
     const unsigned char header_cmp[] = {
         49, 138, 84, 64, 58, 19, 175, 38, 170, 252
@@ -62,6 +62,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
     return PAM_SUCCESS;
 cleanup_token_home_fd: close(token_home_fd);
 cleanup_microsd_fd:    close(microsd_fd);
+cleanup:
     return PAM_AUTH_ERR;
 }
 
