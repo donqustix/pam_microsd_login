@@ -29,8 +29,7 @@ void log_error(const char* format, ...)
 int generate_token(unsigned char* data)
 {
     const int urandom_fd = open("/dev/urandom", O_RDONLY);
-    if (urandom_fd < 0)
-    {
+    if (urandom_fd < 0) {
         log_error("generate_token() -> open() failed: %s", strerror(errno));
         return 1;
     }
@@ -43,15 +42,12 @@ int save_token_home(const char* user, unsigned char* token)
 {
     errno = 0;
     const struct passwd* const pwd = getpwnam(user);
-    if (!pwd)
-    {
+    if (!pwd) {
         log_error("getpwnam() failed: %s", strerror(errno));
         return 1;
     }
-
     char filepath[64];
     snprintf(filepath, 64, "%s/microsd_token", pwd->pw_dir);
-
     const int microsd_token_fd = open(filepath, O_WRONLY | O_CREAT);
     if (microsd_token_fd < 0)
     {
@@ -66,8 +62,7 @@ int save_token_home(const char* user, unsigned char* token)
 int save_token_microsd(unsigned char* token, const char* user)
 {
     const int microsd_fd = open("/dev/mmcblk0", O_WRONLY);
-    if (microsd_fd < 0)
-    {
+    if (microsd_fd < 0) {
         log_error("save_token_microsd() -> open() failed: %s", strerror(errno));
         return 1;
     }
