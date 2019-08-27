@@ -39,31 +39,30 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
     }
     lseek(microsd_fd, HEADER_USERNAME_SIZE - username_size, SEEK_CUR);
     read(microsd_fd, token_microsd.data, TOKEN_SIZE);
-cleanup_microsd_fd: close(microsd_fd);
     errno = 0;
     const struct passwd* const pwd = getpwnam(username);
     if (!pwd) {
         log_error("getpwnam() failed: %s", strerror(errno));
-        return PAM_AUTH_ERR;
+        goto cleanup_microsd_fd;
     }
     char buffer[64];
     snprintf(buffer, 64, "%s/microsd_token", pwd->pw_dir);
     const int token_home_fd = open(buffer, O_RDONLY);
-    if (token_home_fd < 0)
-    {
+    if (token_home_fd < 0) {
         log_error("open() - microsd_token failed: %s", strerror(errno));
-        return PAM_AUTH_ERR;
+        goto cleanup_microsd_fd;
     }
     unsigned char token_home[TOKEN_SIZE];
     read(token_home_fd, token_home, TOKEN_SIZE);
-    close(token_home_fd);
-    if (memcmp(token_microsd.data, token_home, TOKEN_SIZE))
-    {
+    if (memcmp(token_microsd.data, token_home, TOKEN_SIZE)) {
         log_error("bad token");
-        return PAM_AUTH_ERR;
+        goto cleanup_token_home_fd;
     }
     update_token(username);
     return PAM_SUCCESS;
+cleanup_token_home_fd: close(token_home_fd);
+cleanup_microsd_fd:    close(microsd_fd);
+    return PAM_AUTH_ERR;
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t* pamh, int flags, int argc, const char** argv)
