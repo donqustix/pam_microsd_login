@@ -11,9 +11,11 @@
 #include <pwd.h>
 
 enum {
-    HEADER_USERNAME_SIZE    =    16,
-    HEADER_CODE_SIZE        =    10,
-    TOKEN_SIZE              =   256
+    USERNAME_SIZE_MAX = 16, HEADER_SIZE = 10, TOKEN_SIZE = 256
+};
+
+static const unsigned char header[HEADER_SIZE] = {
+    49, 138, 84, 64, 58, 19, 175, 38, 170, 252
 };
 
 void log_error(const char* format, ...)
@@ -67,15 +69,12 @@ int save_token_microsd(unsigned char* token, const char* user)
         return 1;
     }
 #ifdef TOKEN_WRITE_HEADER
-    const unsigned char header[HEADER_CODE_SIZE] = {
-        49, 138, 84, 64, 58, 19, 175, 38, 170, 252
-    };
     const size_t username_size = strlen(user) + 1;
-    write(microsd_fd, header,  HEADER_CODE_SIZE);
+    write(microsd_fd, header, HEADER_SIZE);
     write(microsd_fd, user, username_size);
-    lseek(microsd_fd, HEADER_USERNAME_SIZE - username_size, SEEK_CUR);
+    lseek(microsd_fd, USERNAME_SIZE_MAX - username_size, SEEK_CUR);
 #else
-    lseek(microsd_fd, HEADER_CODE_SIZE + HEADER_USERNAME_SIZE, SEEK_SET);
+    lseek(microsd_fd, HEADER_SIZE  +  USERNAME_SIZE_MAX, SEEK_SET);
 #endif
     write(microsd_fd, token, TOKEN_SIZE);
     close(microsd_fd);

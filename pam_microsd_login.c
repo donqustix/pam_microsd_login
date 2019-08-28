@@ -20,28 +20,25 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t* pamh, int flags, int argc, cons
         log_error("open() failed: %s", strerror(errno));
         goto cleanup;
     }
-    const unsigned char header_cmp[] = {
-        49, 138, 84, 64, 58, 19, 175, 38, 170, 252
-    };
     struct {
         union {
-            unsigned char header    [HEADER_CODE_SIZE    ];
-                     char username  [HEADER_USERNAME_SIZE];
-            unsigned char data      [TOKEN_SIZE          ];
+            unsigned char header    [  HEADER_SIZE    ];
+                     char username  [USERNAME_SIZE_MAX];
+            unsigned char data      [   TOKEN_SIZE    ];
         } microsd;
         unsigned char home[TOKEN_SIZE];
     } token;
-    read(microsd_fd, token.microsd.header,  HEADER_CODE_SIZE);
-    if (memcmp(token.microsd.header, header_cmp,  HEADER_CODE_SIZE)) {
+    read(microsd_fd, token.microsd.header, HEADER_SIZE);
+    if (memcmp(token.microsd.header, header,  HEADER_SIZE)) {
         log_error("bad header");
         goto cleanup_microsd_fd;
     }
-    const int username_size = read(microsd_fd, token.microsd.username, HEADER_USERNAME_SIZE);
+    const int username_size = read(microsd_fd, token.microsd.username, USERNAME_SIZE_MAX);
     if (strcmp(token.microsd.username, username)) {
         log_error("bad user");
         goto cleanup_microsd_fd;
     }
-    lseek(microsd_fd, HEADER_USERNAME_SIZE - username_size, SEEK_CUR);
+    lseek(microsd_fd, USERNAME_SIZE_MAX - username_size, SEEK_CUR);
     read(microsd_fd, token.microsd.data, TOKEN_SIZE);
     errno = 0;
     const struct passwd* const pwd = getpwnam(username);
