@@ -40,7 +40,7 @@ int generate_token(unsigned char* data)
     return 0;
 }
 
-int save_token_home(const char* user, unsigned char* token)
+int build_microsd_token_path(const char* user, char* filepath)
 {
     errno = 0;
     const struct passwd* const pwd = getpwnam(user);
@@ -48,11 +48,17 @@ int save_token_home(const char* user, unsigned char* token)
         log_error("getpwnam() failed: %s", strerror(errno));
         return 1;
     }
-    char filepath[64];
     snprintf(filepath, 64, "%s/microsd_token", pwd->pw_dir);
-    const int microsd_token_fd = open(filepath, O_WRONLY | O_CREAT);
-    if (microsd_token_fd < 0)
-    {
+    return 0;
+}
+
+int save_token_home(const char* user, unsigned char* token)
+{
+    char microsd_token_path[64];
+    if (build_microsd_token_path(user, microsd_token_path))
+        return 1;
+    const int microsd_token_fd = open(microsd_token_path, O_WRONLY | O_CREAT);
+    if (microsd_token_fd < 0) {
         log_error("save_token_home() -> open() failed: %s", strerror(errno));
         return 1;
     }
